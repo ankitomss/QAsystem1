@@ -1,3 +1,7 @@
+## This project is taken from originally from 
+##https://github.com/raoariel/NLP-Question-Answer-System
+## This will include changes on top of this repository for project purpose improving and enhancing the methodology used in QA system developed.
+
 # NLP-Question-Answer-System
 ----------------------------------
 We will use NLTK to apply part of speech labeling and the Stanford parser for entity relationship modeling. Using an external package to take care of the details of implementation will allow us to focus on tweaking our algorithms on a higher level. We will use these tools to parse text before both distinguishing between the tasks of asking and answering.
