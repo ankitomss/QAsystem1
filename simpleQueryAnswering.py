@@ -1,6 +1,10 @@
-import sys
+import sys, os
 import numpy
-from corenlp import *
+path = os.path.abspath(os.path.join("stanford_corenlp_python"))
+sys.path.append(path)
+from stanford_corenlp_python.corenlp import *
+
+#from corenlp import StandfordCoreNLP
 import nltk
 import nltk.data
 import collections
@@ -11,7 +15,7 @@ from bs4 import BeautifulSoup
 
 
 # Setup
-corenlp = StanfordCoreNLP()
+corenlp = StanfordCoreNLP(corenlp_path="./stanford_corenlp_python/stanford-corenlp-full-2014-08-27/")
 sent_detector = nltk.data.load("tokenizers/punkt/english.pickle")
 
 # Hardcoded word lists

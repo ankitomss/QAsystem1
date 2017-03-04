@@ -147,7 +147,7 @@ class StanfordCoreNLP(object):
         classname = "edu.stanford.nlp.pipeline.StanfordCoreNLP"
         # include the properties file, so you can change defaults
         # but any changes in output format will break parse_parser_results()
-        props = "-props default.properties" 
+        props = "-props ./stanford_corenlp_python/default.properties" 
         
         # add and check classpaths
         jars = [corenlp_path + jar for jar in jars]
@@ -160,6 +160,7 @@ class StanfordCoreNLP(object):
         start_corenlp = "%s -Xmx1800m -cp %s %s %s" % (java_path, ':'.join(jars), classname, props)
         if VERBOSE: 
             logger.debug(start_corenlp)
+        print start_corenlp
         self.corenlp = pexpect.spawn(start_corenlp)
         
         # show progress bar while loading the models
