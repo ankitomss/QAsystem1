@@ -160,7 +160,7 @@ class StanfordCoreNLP(object):
         start_corenlp = "%s -Xmx1800m -cp %s %s %s" % (java_path, ':'.join(jars), classname, props)
         if VERBOSE: 
             logger.debug(start_corenlp)
-        print start_corenlp
+        
         self.corenlp = pexpect.spawn(start_corenlp)
         
         # show progress bar while loading the models

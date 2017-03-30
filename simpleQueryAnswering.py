@@ -97,27 +97,21 @@ def similar(word, checklist):
     return 0
 
 
-def processFiles(articlefilename, questionsfilename=None):
+def processLine(line, article, question, answer):
+    
+    qflag = 0
+    line.replace("\n", ".")
+    if "?" in line:
+        qflag = 1
+        q, ans, no = line.split('\t')
+        question.append(" ".join(q.split()[1:]))
+        answer.append(ans)
 
-    if questionsfilename == None:
-        questionsfilename = articlefilename
+    else:
+        line = " ".join(line.split()[1:])
+        article.append(line)
 
-    article, question, answer = [], [], []
-    # Process article file
-    with open(articlefilename, 'r') as f:
-        lines = f.readlines()
-        for line in lines:
-            line.replace("\n", ".")
-            if "?" in line:
-                q, ans, no = line.split('\t')
-                question.append(" ".join(q.split()[1:]))
-                answer.append(ans)
-
-            else:
-                line = " ".join(line.split()[1:])
-                article.append(line)
-
-    return article, question, answer
+    return qflag
     
     # article = BeautifulSoup(article).get_text()
     # article = ''.join([i if ord(i) < 128 else ' ' for i in article])
@@ -134,13 +128,23 @@ def main():
     # Get command line arguments
     debug = 0
     articlefilename = sys.argv[1]
-    questionsfilename = sys.argv[2]
-    article, questions, answers = processFiles(articlefilename, questionsfilename)
+    if len(sys.argv) == 3:
+        questionsfilename = sys.argv[2]
+    article, questions, answers = [], [], []
+    right, wrong = 0, 0
+
     if debug:
         print article, questions, answers
     
-    # Iterate through all questions
-    for question in questions:
+    with open(articlefilename, 'r') as f:
+        lines = f.readlines()
+
+    for line in lines:
+        qflag = processLine(line, article, questions, answers)
+        if not qflag:
+            continue
+
+        question = questions[-1]
 
         # Tokenize question
         print "Q:", question
@@ -192,7 +196,16 @@ def main():
                         answer.append(srl[0][srltag[i+1]])
 
         if answer:
-            print answer[-1]
+            exp, actual = answer[-1], answers[-1]
+            print answer[-1], "-->", answers[-1]
+
+            if actual in exp:
+                right += 1
+            else:
+                wrong += 1
+
+    print "Accuracy of the task ", (float(right)*100) /(float(right) + float(wrong))
+
 
 
   
