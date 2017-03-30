@@ -7,6 +7,12 @@
 We will use NLTK to apply part of speech labeling and the Stanford parser for entity relationship modeling. Using an external package to take care of the details of implementation will allow us to focus on tweaking our algorithms on a higher level. We will use these tools to parse text before both distinguishing between the tasks of asking and answering.
 Because pronouns are fundamentally ambiguous, we will consider using a probabilistic model for anaphora resolution. Then, we can build an offline database of entity-factoid pairs that we can query for answering.
 
+What you need:
+
+https://github.com/biplab-iitb/practNLPTools
+dataset to test from babi repo: 
+nltk package, porter stemmer and wordnet lemmatizer
+
 Asking
 ----------------------------------
 Since we have already tagged the text when parsing, we can then identify the candidate subjects of each question in an article and build a collection of question templates. We will then extract meta-information (such as the “Categories” section) from the Wikipedia HTML structure to topically generate questions for sections of text. Given a new article, we will consider the attributes of each subject in the text and apply the most probable question template based on all critical words in each sentence.
