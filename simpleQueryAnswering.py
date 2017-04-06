@@ -26,9 +26,9 @@ sent_detector = nltk.data.load("tokenizers/punkt/english.pickle")
 
 # Hardcoded word lists
 yesnowords = ["can", "could", "would", "is", "does", "has", "was", "were", "had", "have", "did", "are", "will"]
-commonwords = ["the", "a", "an", "is", "are", "were", "."]
+stopwords = set(["the", "a", "an", "is", "are", "were", ".", "there", "to"])
 questionwords = ["who", "what", "where", "when", "why", "how", "whose", "which", "whom"]
-motion_verbs = ['move', 'travel', 'journeyed', 'went', 'goes']
+motion_verbs = ['moved', 'travelled', 'journeyed', 'went', 'goes']
 possess_verbs = ['has', 'got', 'find', 'found', 'get',  'grabbed', 'took']
 left_verbs = ['put down', 'dropped', 'discarded', 'left']
 
@@ -63,12 +63,21 @@ def processquestion(qwords, question):
     pos = annotation['pos']
     ner = annotation['ner']
 
+    target, attributes = [], []
     # Determine question type
     if questionword in ["who", "whose", "whom"]:
         type = "S-PER"
     elif questionword == "where":
         type = "S-LOC"
-        target = [tag[0] for tag in pos if tag[1] == "NN" or tag[1] == "NNP"]
+        targetDone = False
+        for tag in pos:
+            if (tag[1] == "NN" or tag[1] == "NNP") and not targetDone:
+                target = [tag[0]]
+                targetDone = True
+
+            elif tag[1] == "NN" or tag[1] == "NNP" or tag[1] == "IN":
+                attributes.append(tag)
+        
     elif questionword == "when":
         type = "TIME"
     elif questionword == "how":
@@ -92,7 +101,7 @@ def processquestion(qwords, question):
                 targetType.append(ntag[1])
 
     # Return question data
-    return (type, questionword, target, targetType)
+    return (type, questionword, target, targetType, attributes)
 
 def getSubject(pos):
     ret = []
@@ -107,6 +116,12 @@ def similar(word, checklist):
             return 1
     return 0
 
+def markObjectLocation(keeper):
+    if keeper not in location: return 
+
+    for obj in list(has[keeper]):
+        if obj not in location or location[keeper][-1] != location[obj][-1]:
+            location[obj].append(location[keeper][-1])
 
 def processLine(line, article, question, answer):
     
@@ -119,7 +134,10 @@ def processLine(line, article, question, answer):
         answer.append(ans)
 
     else:
-        line = " ".join(line.split()[1:])
+        line = line.split()[1:]
+        line = [w for w in line if w not in stopwords]
+        line = " ".join(line)
+        
         article.append(line)
 
         annotation = annotator.getAnnotations(line, dep_parse=True)
@@ -133,12 +151,12 @@ def processLine(line, article, question, answer):
         if similar(v, motion_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             location[objects[0]].append(objects[1])
-            for obj in list(has[objects[0]]):
-                location[obj] = [objects[1]]
+            markObjectLocation(objects[0])
         elif similar(v, possess_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             has[objects[0]].add(objects[1])
             invert_has[objects[1]] = objects[0]
+            markObjectLocation(objects[0])
         elif similar(v, left_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             has[objects[0]].discard(objects[1])
@@ -180,15 +198,24 @@ def main():
         questionPOS = nltk.pos_tag(qwords)
 
         # Process question
-        (type, questionword, target, targetType) = processquestion(qwords, question)
+        (type, questionword, target, targetType, attributes) = processquestion(qwords, question)
         # Answer yes/no questions
         if type == "YESNO":
             yesno.answeryesno(article, qwords)
             continue
 
-        if questionword == "where":
+        attributes_words = [a[0] for a in attributes]
+        if questionword == "where" and "before" in attributes_words:
+            before = [a[0] for a in attributes if a[1] == "NN"][0]
+            loc = location[target[-1]]
+            for i in xrange(len(loc)-1, -1, -1):
+                if loc[i] == before and i != 0:
+                    answer = [loc[i-1]]
+                    break
+        elif questionword == "where":
             if target[-1] in location:
                 answer = [location[target[-1]][-1]]
+
 
         if answer:
             exp, actual = answer[-1], answers[-1]
