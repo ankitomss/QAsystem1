@@ -26,15 +26,17 @@ sent_detector = nltk.data.load("tokenizers/punkt/english.pickle")
 
 # Hardcoded word lists
 yesnowords = ["can", "could", "would", "is", "does", "has", "was", "were", "had", "have", "did", "are", "will"]
-stopwords = set(["the", "a", "an", "is", "are", "were", ".", "there", "to"])
+stopwords = set(["the", "a", "an", "are", "were", ".", "there", "to"])
 questionwords = ["who", "what", "where", "when", "why", "how", "whose", "which", "whom"]
 motion_verbs = ['moved', 'travelled', 'journeyed', 'went', 'goes']
 possess_verbs = ['has', 'got', 'find', 'found', 'get',  'grabbed', 'took']
 left_verbs = ['put down', 'dropped', 'discarded', 'left']
+direction_verbs = ['east', 'west', 'north', 'south']
 
 motion_verbs = [porter.stem(w) for w in motion_verbs]
 possess_verbs = [porter.stem(w) for w in possess_verbs]
 left_verbs = [porter.stem(w) for w in left_verbs]
+
 # Take in a tokenized question and return the question type and body
 def processquestion(qwords, question):
     
@@ -87,6 +89,10 @@ def processquestion(qwords, question):
         elif target[0] in ["young", "old", "long"]:
             type = "TIME"
             target = target[1:]
+    elif questionword == "what":
+        if set(direction_verbs) & set(question.split()):
+            target = [p[0] for p in pos if p[1] == "NN" or p[1] == "NNP"]
+            attributes = [p for p in pos if p[1] == "JJ" or p[1] == "RB"]
 
     # Trim possible extra helper verb
     if questionword == "which":
@@ -111,6 +117,7 @@ def getSubject(pos):
     return ret 
 
 def similar(word, checklist):
+    if not word: return 0
     for check in checklist:
         if word in check:
             return 1
@@ -130,7 +137,9 @@ def processLine(line, article, question, answer):
     if "?" in line:
         qflag = 1
         q, ans, no = line.split('\t')
-        question.append(" ".join(q.split()[1:]))
+        q = q.split()[1:]
+        q = [w for w in q if w not in stopwords]
+        question.append(" ".join(q))
         answer.append(ans)
 
     else:
@@ -139,15 +148,18 @@ def processLine(line, article, question, answer):
         line = " ".join(line)
         
         article.append(line)
-
         annotation = annotator.getAnnotations(line, dep_parse=True)
         pos = annotation['pos']
         ner = annotation['ner']
         srl = annotation['srl']
 
-        srltag = [k for k, v in srl[0].iteritems()]
-        v = porter.stem(srl[0]["V"])
+        v = ""
+        if srl: 
+            srltag = [k for k, v in srl[0].iteritems()]
+            v = porter.stem(srl[0]["V"])
 
+        direct = [p[0] for p in pos if p[1] == 'JJ' or p[1] == "RB"]
+        if direct: direct = direct[0]
         if similar(v, motion_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             location[objects[0]].append(objects[1])
@@ -161,6 +173,10 @@ def processLine(line, article, question, answer):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             has[objects[0]].discard(objects[1])
             invert_has[objects[1]] = ""
+        elif direct in direction_verbs:
+            objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
+            direction[direct][objects[1]].append(objects[0])
+            direction[opposite_direction[direct]][objects[0]].append(objects[1])
 
     return qflag
     
@@ -170,6 +186,12 @@ location = collections.defaultdict(list)
 act = collections.defaultdict(list)
 has = collections.defaultdict(set)
 invert_has = collections.defaultdict(list)
+direction = {}
+direction['east'] = collections.defaultdict(list)
+direction['west'] = collections.defaultdict(list)
+direction['north'] = collections.defaultdict(list)
+direction['south'] = collections.defaultdict(list)
+opposite_direction = {'east':'west', 'west':'east', 'north':'south', 'south':'north'}
 
 def main():
     # Get command line arguments
@@ -187,6 +209,7 @@ def main():
 
     for line in lines:
         qflag = processLine(line, article, questions, answers)
+        #  print direction
         if not qflag:
             continue
         question = questions[-1]
@@ -212,10 +235,19 @@ def main():
                 if loc[i] == before and i != 0:
                     answer = [loc[i-1]]
                     break
+
         elif questionword == "where":
             if target[-1] in location:
                 answer = [location[target[-1]][-1]]
 
+        elif questionword == "what":
+            if set(direction_verbs) & set(attributes_words):
+                direct = attributes_words[0]
+                pos_tag = [a[1] for a in attributes if a[0] == direct][0]
+                if pos_tag == "RB":
+                    answer = direction[opposite_direction[direct]][target[-1]]
+                elif pos_tag == "JJ":
+                    answer = direction[direct][target[-1]]
 
         if answer:
             exp, actual = answer[-1], answers[-1]
