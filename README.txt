@@ -16,11 +16,11 @@
 
 |===============================================|
 
-    Generating Questions:
-        ./ask file.txt number_of_questions > tune_a_fish_question.txt
 
 
     Answering Questions:
-        ./answer file.txt question.txt > tune_a_fish_answer.txt
+        ./answer file.txt
+        file.txt could be any file of bAbI task, test or train.
+        This system is only made for first 4 bAbI task.
 
 |===============================================|

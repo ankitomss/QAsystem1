@@ -2,6 +2,10 @@
 ##https://github.com/raoariel/NLP-Question-Answer-System
 ## This will include changes on top of this repository for project purpose improving and enhancing the methodology used in QA system developed.
 
+USES (*Note: This system is only made for first 4 bAbI task. Wont work for later bAbI tasks.)
+----------------------------------
+python simpleQueryAnswering.py ./data/en/qa2_two_supporting_facts_test.txt
+
 # NLP-Question-Answer-System
 ----------------------------------
 We will use NLTK to apply part of speech labeling and the Stanford parser for entity relationship modeling. Using an external package to take care of the details of implementation will allow us to focus on tweaking our algorithms on a higher level. We will use these tools to parse text before both distinguishing between the tasks of asking and answering.
@@ -27,3 +31,4 @@ Both the asking and answering modules will share the structured data extracted f
 Evaluation 
 ----------------------------------
 We will be automatically evaluating each question generated for grammar and syntax, to ensure fluency. We will also evaluate answers for surface-level factual accuracy and adherence to the information need of the corresponding question, in addition to grammar and syntax. We will use the quality of candidate answers as a ranking criterion for the questions we generate.
+

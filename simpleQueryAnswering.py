@@ -37,7 +37,7 @@ motion_verbs = [porter.stem(w) for w in motion_verbs]
 possess_verbs = [porter.stem(w) for w in possess_verbs]
 left_verbs = [porter.stem(w) for w in left_verbs]
 
-# Take in a tokenized question and return the question type and body
+# Take in a tokenized question and return the question type and other attributes.
 def processquestion(qwords, question):
     
     # Find "question word" (what, who, where, etc.)
@@ -123,6 +123,7 @@ def similar(word, checklist):
             return 1
     return 0
 
+# This function marks the objects location keeper has.
 def markObjectLocation(keeper):
     if keeper not in location: return 
 
@@ -130,6 +131,8 @@ def markObjectLocation(keeper):
         if obj not in location or location[keeper][-1] != location[obj][-1]:
             location[obj].append(location[keeper][-1])
 
+# This function process each line from Input and build the knowledge bank 
+# using the information found in each sentence.
 def processLine(line, article, question, answer):
     
     qflag = 0
@@ -160,19 +163,23 @@ def processLine(line, article, question, answer):
 
         direct = [p[0] for p in pos if p[1] == 'JJ' or p[1] == "RB"]
         if direct: direct = direct[0]
+        # build knowledge bank based on the different predicate group
         if similar(v, motion_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             location[objects[0]].append(objects[1])
             markObjectLocation(objects[0])
+
         elif similar(v, possess_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             has[objects[0]].add(objects[1])
             invert_has[objects[1]] = objects[0]
             markObjectLocation(objects[0])
+
         elif similar(v, left_verbs):
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             has[objects[0]].discard(objects[1])
             invert_has[objects[1]] = ""
+
         elif direct in direction_verbs:
             objects = [p[0] for p in pos if p[1] == 'NN' or p[1] == 'NNP']
             direction[direct][objects[1]].append(objects[0])
@@ -261,7 +268,7 @@ def main():
 
     print "Accuracy of the task ", (float(right)*100) /(float(right) + float(wrong))
 
-
+#Function used to find the location of the perticular entity, asked in where question.
 def findEntity(article, target, targetType, questionword, stop=None):
     # Find most relevant sentences
     answer, newtarget, newtargetType = [], [], targetType
